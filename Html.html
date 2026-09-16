@@ -1,0 +1,567 @@
+<!-- ไฟล์ที่ 1: online-store.html -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orange Shop — ระบบขายสินค้าออนไลน์</title>
+  <style>
+    :root {
+      --primary: #f59e0b;
+      --primary-dark: #d97706;
+      --secondary: #fed7aa;
+      --background: #fff7ed;
+      --surface: #ffffff;
+      --text: #431407;
+      --muted: #78716c;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --border: #fdba74;
+      --shadow: 0 8px 24px rgba(154, 52, 18, 0.10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--background);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    button, input, select { font: inherit; }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: white;
+      background: var(--primary);
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button:hover { background: var(--primary-dark); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .danger { background: var(--danger); }
+    .success { background: var(--success); }
+    header {
+      padding: 18px 5%;
+      color: white;
+      background: linear-gradient(120deg, #fb923c, #f59e0b);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow);
+    }
+    header h1 { margin: 0; font-size: clamp(1.4rem, 4vw, 2rem); }
+    header p { margin: 4px 0 0; opacity: .9; }
+    .badge {
+      min-width: 28px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      color: var(--primary-dark);
+      background: white;
+      text-align: center;
+    }
+    main {
+      width: min(1200px, 92%);
+      margin: 24px auto;
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+      gap: 20px;
+    }
+    .card {
+      padding: 18px;
+      border: 1px solid #ffedd5;
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .toolbar {
+      margin-bottom: 18px;
+      display: grid;
+      grid-template-columns: 2fr 1fr auto;
+      gap: 10px;
+    }
+    input, select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      background: white;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px #ffedd5;
+    }
+    .products {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 14px;
+    }
+    .product {
+      overflow: hidden;
+      border: 1px solid #ffedd5;
+      border-radius: 14px;
+      background: white;
+    }
+    .product-image {
+      height: 115px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #ffedd5, #fed7aa);
+      font-size: 3.5rem;
+    }
+    .product-body { padding: 14px; }
+    .product h3 { margin: 0 0 7px; }
+    .product p { margin: 4px 0; color: var(--muted); }
+    .price { color: var(--primary-dark); font-size: 1.15rem; font-weight: 800; }
+    .product button { width: 100%; margin-top: 10px; }
+    .cart {
+      position: sticky;
+      top: 16px;
+      align-self: start;
+    }
+    .cart-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #ffedd5;
+    }
+    .cart-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .quantity {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .quantity button { padding: 4px 10px; }
+    .totals {
+      margin: 15px 0;
+      padding: 12px;
+      border-radius: 12px;
+      background: #fff7ed;
+    }
+    .totals div {
+      display: flex;
+      justify-content: space-between;
+      margin: 6px 0;
+    }
+    .grand-total { font-size: 1.15rem; font-weight: 800; }
+    .checkout-form { display: grid; gap: 10px; }
+    .empty { padding: 30px; color: var(--muted); text-align: center; }
+    .message {
+      display: none;
+      margin-bottom: 12px;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    .message.show { display: block; }
+    .message.error { color: #991b1b; background: #fee2e2; }
+    .message.ok { color: #166534; background: #dcfce7; }
+    dialog {
+      width: min(600px, 92%);
+      border: 0;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+    dialog::backdrop { background: rgba(67, 20, 7, .45); }
+    .admin-form {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 8px;
+    }
+    table { width: 100%; margin-top: 15px; border-collapse: collapse; }
+    th, td { padding: 9px; border-bottom: 1px solid #ffedd5; text-align: left; }
+    @media (max-width: 800px) {
+      main { grid-template-columns: 1fr; }
+      .toolbar, .admin-form { grid-template-columns: 1fr; }
+      .cart { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>🛍️ Orange Shop</h1>
+      <p>ระบบขายสินค้าออนไลน์</p>
+    </div>
+    <div>
+      ตะกร้า <span id="cartCount" class="badge">0</span>
+      <button id="openAdminButton" type="button">จัดการสินค้า</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="toolbar">
+        <input id="searchInput" type="search" placeholder="ค้นหาชื่อสินค้า">
+        <select id="categoryFilter">
+          <option value="">ทุกหมวดหมู่</option>
+        </select>
+        <select id="sortSelect">
+          <option value="name">เรียงตามชื่อ</option>
+          <option value="price-asc">ราคาต่ำไปสูง</option>
+          <option value="price-desc">ราคาสูงไปต่ำ</option>
+        </select>
+      </div>
+      <div id="productList" class="products"></div>
+    </section>
+
+    <aside class="card cart">
+      <h2>ตะกร้าสินค้า</h2>
+      <div id="cartMessage" class="message"></div>
+      <div id="cartList"></div>
+      <div class="totals">
+        <div><span>ยอดสินค้า</span><span id="subtotal">฿0.00</span></div>
+        <div><span>ค่าจัดส่ง</span><span id="shipping">฿0.00</span></div>
+        <div class="grand-total"><span>ยอดสุทธิ</span><span id="grandTotal">฿0.00</span></div>
+      </div>
+      <form id="checkoutForm" class="checkout-form" novalidate>
+        <input id="customerName" maxlength="80" placeholder="ชื่อผู้สั่งซื้อ" required>
+        <input id="customerPhone" inputmode="numeric" maxlength="10" placeholder="หมายเลขโทรศัพท์ 9–10 หลัก" required>
+        <textarea id="customerAddress" rows="3" maxlength="250" placeholder="ที่อยู่จัดส่ง" required></textarea>
+        <button type="submit">ยืนยันคำสั่งซื้อ</button>
+      </form>
+    </aside>
+  </main>
+
+  <dialog id="adminDialog">
+    <h2>จัดการสินค้า</h2>
+    <form id="productForm" class="admin-form">
+      <input id="productName" maxlength="80" placeholder="ชื่อสินค้า" required>
+      <input id="productPrice" type="number" min="1" step="0.01" placeholder="ราคา" required>
+      <input id="productStock" type="number" min="0" step="1" placeholder="สต็อก" required>
+      <input id="productCategory" maxlength="40" placeholder="หมวดหมู่" required>
+      <button type="submit">เพิ่มสินค้า</button>
+    </form>
+    <div id="adminMessage" class="message"></div>
+    <div style="overflow:auto">
+      <table>
+        <thead>
+          <tr><th>สินค้า</th><th>หมวดหมู่</th><th>ราคา</th><th>สต็อก</th><th>คำสั่ง</th></tr>
+        </thead>
+        <tbody id="adminProductList"></tbody>
+      </table>
+    </div>
+    <button id="closeAdminButton" type="button">ปิดหน้าต่าง</button>
+  </dialog>
+
+  <script>
+    "use strict";
+
+    const STORAGE = {
+      PRODUCTS: "orange-shop-products-v1",
+      CART: "orange-shop-cart-v1",
+      ORDERS: "orange-shop-orders-v1"
+    };
+
+    const seedProducts = [
+      { id: "p1", name: "กระเป๋าผ้า", category: "แฟชั่น", price: 259, stock: 12, icon: "👜" },
+      { id: "p2", name: "แก้วเก็บอุณหภูมิ", category: "ของใช้", price: 349, stock: 8, icon: "🥤" },
+      { id: "p3", name: "สมุดโน้ต", category: "เครื่องเขียน", price: 89, stock: 25, icon: "📒" },
+      { id: "p4", name: "หูฟังไร้สาย", category: "อิเล็กทรอนิกส์", price: 799, stock: 6, icon: "🎧" }
+    ];
+
+    const readStorage = (key, fallback) => {
+      try {
+        const value = JSON.parse(localStorage.getItem(key));
+        return value ?? fallback;
+      } catch {
+        return fallback;
+      }
+    };
+
+    const createId = () =>
+      window.crypto?.randomUUID?.() ??
+      `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    const escapeHtml = value =>
+      String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;",
+        '"': "&quot;", "'": "&#039;"
+      })[char]);
+
+    const formatMoney = value =>
+      new Intl.NumberFormat("th-TH", {
+        style: "currency",
+        currency: "THB"
+      }).format(Number(value));
+
+    let products = readStorage(STORAGE.PRODUCTS, seedProducts);
+    let cart = readStorage(STORAGE.CART, []);
+
+    const save = () => {
+      localStorage.setItem(STORAGE.PRODUCTS, JSON.stringify(products));
+      localStorage.setItem(STORAGE.CART, JSON.stringify(cart));
+    };
+
+    const showMessage = (element, text, type = "ok") => {
+      element.textContent = text;
+      element.className = `message show ${type}`;
+      setTimeout(() => element.classList.remove("show"), 3000);
+    };
+
+    function populateCategories() {
+      const selected = categoryFilter.value;
+      const categories = [...new Set(products.map(p => p.category))].sort();
+      categoryFilter.innerHTML =
+        '<option value="">ทุกหมวดหมู่</option>' +
+        categories.map(category =>
+          `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`
+        ).join("");
+      categoryFilter.value = categories.includes(selected) ? selected : "";
+    }
+
+    function filteredProducts() {
+      const query = searchInput.value.trim().toLocaleLowerCase("th");
+      const category = categoryFilter.value;
+
+      return products
+        .filter(product =>
+          product.name.toLocaleLowerCase("th").includes(query) &&
+          (!category || product.category === category)
+        )
+        .sort((a, b) => {
+          if (sortSelect.value === "price-asc") return a.price - b.price;
+          if (sortSelect.value === "price-desc") return b.price - a.price;
+          return a.name.localeCompare(b.name, "th");
+        });
+    }
+
+    function renderProducts() {
+      const result = filteredProducts();
+
+      productList.innerHTML = result.length
+        ? result.map(product => `
+          <article class="product">
+            <div class="product-image">${escapeHtml(product.icon || "📦")}</div>
+            <div class="product-body">
+              <h3>${escapeHtml(product.name)}</h3>
+              <p>${escapeHtml(product.category)}</p>
+              <p class="price">${formatMoney(product.price)}</p>
+              <p>คงเหลือ ${product.stock} ชิ้น</p>
+              <button type="button"
+                onclick="addToCart('${product.id}')"
+                ${product.stock <= 0 ? "disabled" : ""}>
+                ${product.stock > 0 ? "เพิ่มลงตะกร้า" : "สินค้าหมด"}
+              </button>
+            </div>
+          </article>
+        `).join("")
+        : '<div class="empty">ไม่พบสินค้า</div>';
+    }
+
+    function addToCart(productId) {
+      const product = products.find(item => item.id === productId);
+      if (!product || product.stock <= 0) return;
+
+      const item = cart.find(item => item.productId === productId);
+      const currentQuantity = item?.quantity ?? 0;
+
+      if (currentQuantity >= product.stock) {
+        showMessage(cartMessage, "จำนวนสินค้าเกินสต็อกที่มี", "error");
+        return;
+      }
+
+      if (item) item.quantity++;
+      else cart.push({ productId, quantity: 1 });
+
+      save();
+      renderCart();
+    }
+
+    function changeQuantity(productId, amount) {
+      const item = cart.find(entry => entry.productId === productId);
+      const product = products.find(entry => entry.id === productId);
+      if (!item || !product) return;
+
+      const nextQuantity = item.quantity + amount;
+      if (nextQuantity > product.stock) {
+        showMessage(cartMessage, "จำนวนสินค้าเกินสต็อกที่มี", "error");
+        return;
+      }
+
+      if (nextQuantity <= 0) {
+        cart = cart.filter(entry => entry.productId !== productId);
+      } else {
+        item.quantity = nextQuantity;
+      }
+
+      save();
+      renderCart();
+    }
+
+    function calculateTotals() {
+      const subtotalValue = cart.reduce((total, item) => {
+        const product = products.find(p => p.id === item.productId);
+        return total + (product ? product.price * item.quantity : 0);
+      }, 0);
+
+      const shippingValue = subtotalValue === 0 || subtotalValue >= 1000 ? 0 : 50;
+      return {
+        subtotal: subtotalValue,
+        shipping: shippingValue,
+        total: subtotalValue + shippingValue
+      };
+    }
+
+    function renderCart() {
+      cart = cart.filter(item => products.some(product => product.id === item.productId));
+
+      cartList.innerHTML = cart.length
+        ? cart.map(item => {
+            const product = products.find(p => p.id === item.productId);
+            return `
+              <div class="cart-item">
+                <div class="cart-line">
+                  <strong>${escapeHtml(product.name)}</strong>
+                  <span>${formatMoney(product.price * item.quantity)}</span>
+                </div>
+                <div class="quantity">
+                  <button type="button" onclick="changeQuantity('${item.productId}', -1)">−</button>
+                  <span>${item.quantity}</span>
+                  <button type="button" onclick="changeQuantity('${item.productId}', 1)">+</button>
+                </div>
+              </div>`;
+          }).join("")
+        : '<div class="empty">ยังไม่มีสินค้าในตะกร้า</div>';
+
+      const totals = calculateTotals();
+      subtotal.textContent = formatMoney(totals.subtotal);
+      shipping.textContent = formatMoney(totals.shipping);
+      grandTotal.textContent = formatMoney(totals.total);
+      cartCount.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+      save();
+    }
+
+    function renderAdmin() {
+      adminProductList.innerHTML = products.map(product => `
+        <tr>
+          <td>${escapeHtml(product.name)}</td>
+          <td>${escapeHtml(product.category)}</td>
+          <td>${formatMoney(product.price)}</td>
+          <td>${product.stock}</td>
+          <td>
+            <button class="danger" type="button"
+              onclick="deleteProduct('${product.id}')">ลบ</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function deleteProduct(productId) {
+      if (!confirm("ยืนยันการลบสินค้านี้?")) return;
+      products = products.filter(product => product.id !== productId);
+      cart = cart.filter(item => item.productId !== productId);
+      save();
+      refreshAll();
+    }
+
+    productForm.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const name = productName.value.trim();
+      const category = productCategory.value.trim();
+      const price = Number(productPrice.value);
+      const stock = Number(productStock.value);
+
+      if (!name || !category || !Number.isFinite(price) || price <= 0 ||
+          !Number.isInteger(stock) || stock < 0) {
+        showMessage(adminMessage, "กรุณากรอกข้อมูลสินค้าให้ถูกต้อง", "error");
+        return;
+      }
+
+      products.push({
+        id: createId(),
+        name,
+        category,
+        price,
+        stock,
+        icon: "📦"
+      });
+
+      productForm.reset();
+      save();
+      refreshAll();
+      showMessage(adminMessage, "เพิ่มสินค้าเรียบร้อยแล้ว");
+    });
+
+    checkoutForm.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const name = customerName.value.trim();
+      const phone = customerPhone.value.replace(/\D/g, "");
+      const address = customerAddress.value.trim();
+
+      if (!cart.length) {
+        showMessage(cartMessage, "กรุณาเลือกสินค้าก่อนสั่งซื้อ", "error");
+        return;
+      }
+
+      if (name.length < 2 || !/^\d{9,10}$/.test(phone) || address.length < 10) {
+        showMessage(cartMessage, "กรุณาตรวจสอบชื่อ โทรศัพท์ และที่อยู่", "error");
+        return;
+      }
+
+      const invalidStock = cart.some(item => {
+        const product = products.find(p => p.id === item.productId);
+        return !product || item.quantity > product.stock;
+      });
+
+      if (invalidStock) {
+        showMessage(cartMessage, "สต็อกสินค้าบางรายการไม่เพียงพอ", "error");
+        return;
+      }
+
+      const totals = calculateTotals();
+      const orders = readStorage(STORAGE.ORDERS, []);
+
+      orders.push({
+        id: createId(),
+        customer: { name, phone, address },
+        items: cart.map(item => ({ ...item })),
+        total: totals.total,
+        status: "รอดำเนินการ",
+        createdAt: new Date().toISOString()
+      });
+
+      cart.forEach(item => {
+        const product = products.find(p => p.id === item.productId);
+        product.stock -= item.quantity;
+      });
+
+      localStorage.setItem(STORAGE.ORDERS, JSON.stringify(orders));
+      cart = [];
+      checkoutForm.reset();
+      save();
+      refreshAll();
+      showMessage(cartMessage, "บันทึกคำสั่งซื้อเรียบร้อยแล้ว");
+    });
+
+    function refreshAll() {
+      populateCategories();
+      renderProducts();
+      renderCart();
+      renderAdmin();
+    }
+
+    searchInput.addEventListener("input", renderProducts);
+    categoryFilter.addEventListener("change", renderProducts);
+    sortSelect.addEventListener("change", renderProducts);
+    openAdminButton.addEventListener("click", () => {
+      renderAdmin();
+      adminDialog.showModal();
+    });
+    closeAdminButton.addEventListener("click", () => adminDialog.close());
+
+    // Unit smoke tests สำหรับฟังก์ชันสำคัญ
+    console.assert(escapeHtml("<script>") === "&lt;script&gt;", "Escape HTML test failed");
+    console.assert(Number.isFinite(calculateTotals().total), "Total calculation test failed");
+    console.assert(formatMoney(100).includes("100"), "Currency formatter test failed");
+
+    refreshAll();
+  </script>
+</body>
+</html>

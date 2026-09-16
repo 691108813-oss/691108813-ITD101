@@ -1,0 +1,586 @@
+<!-- ไฟล์ที่ 2: school-system.html -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orange School — ระบบสารสนเทศโรงเรียน</title>
+  <style>
+    :root {
+      --primary: #f59e0b;
+      --primary-dark: #c2410c;
+      --light: #fff7ed;
+      --surface: #ffffff;
+      --border: #fed7aa;
+      --text: #431407;
+      --muted: #78716c;
+      --danger: #dc2626;
+      --success: #15803d;
+      --shadow: 0 8px 24px rgba(154, 52, 18, .10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--light);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    button, input, select { font: inherit; }
+    button {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 9px;
+      color: white;
+      background: var(--primary);
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button:hover { background: var(--primary-dark); }
+    .danger { background: var(--danger); }
+    header {
+      padding: 20px 5%;
+      color: white;
+      background: linear-gradient(120deg, #fb923c, #f59e0b);
+      box-shadow: var(--shadow);
+    }
+    header h1 { margin: 0; }
+    header p { margin: 5px 0 0; }
+    main { width: min(1200px, 94%); margin: 24px auto; }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .summary article, .panel {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .summary strong {
+      display: block;
+      color: var(--primary-dark);
+      font-size: 1.8rem;
+    }
+    .tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+    .tabs button:not(.active) {
+      color: var(--primary-dark);
+      background: #ffedd5;
+    }
+    .view { display: none; }
+    .view.active { display: block; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 9px;
+      margin-bottom: 18px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      background: white;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px #ffedd5;
+    }
+    .toolbar {
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      padding: 11px;
+      border-bottom: 1px solid #ffedd5;
+      text-align: left;
+      white-space: nowrap;
+    }
+    th { color: #9a3412; background: #fff7ed; }
+    .status {
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: .9rem;
+      font-weight: 700;
+    }
+    .present { color: #166534; background: #dcfce7; }
+    .absent { color: #991b1b; background: #fee2e2; }
+    .late { color: #92400e; background: #fef3c7; }
+    .message {
+      display: none;
+      margin-bottom: 12px;
+      padding: 10px;
+      border-radius: 9px;
+    }
+    .message.show { display: block; }
+    .ok { color: #166534; background: #dcfce7; }
+    .error { color: #991b1b; background: #fee2e2; }
+    .empty { padding: 25px; color: var(--muted); text-align: center; }
+    @media (max-width: 850px) {
+      .summary { grid-template-columns: repeat(2, 1fr); }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 520px) {
+      .summary, .form-grid { grid-template-columns: 1fr; }
+      .tabs, .toolbar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🏫 Orange School</h1>
+    <p>ระบบจัดเก็บข้อมูลนักเรียน การเข้าเรียน และผลการเรียน</p>
+  </header>
+
+  <main>
+    <section class="summary">
+      <article>นักเรียนทั้งหมด<strong id="studentCount">0</strong></article>
+      <article>จำนวนห้องเรียน<strong id="classCount">0</strong></article>
+      <article>มาเรียนวันนี้<strong id="presentCount">0</strong></article>
+      <article>เกรดเฉลี่ยรวม<strong id="averageGrade">0.00</strong></article>
+    </section>
+
+    <nav class="tabs">
+      <button class="tab active" data-view="studentsView">ข้อมูลนักเรียน</button>
+      <button class="tab" data-view="attendanceView">บันทึกเวลาเรียน</button>
+      <button class="tab" data-view="gradesView">ผลการเรียน</button>
+    </nav>
+
+    <div id="systemMessage" class="message"></div>
+
+    <section id="studentsView" class="panel view active">
+      <h2>ข้อมูลนักเรียน</h2>
+      <form id="studentForm" class="form-grid" novalidate>
+        <input id="studentCode" maxlength="12" placeholder="รหัสนักเรียน" required>
+        <input id="firstName" maxlength="60" placeholder="ชื่อ" required>
+        <input id="lastName" maxlength="60" placeholder="นามสกุล" required>
+        <select id="studentLevel" required>
+          <option value="">เลือกระดับชั้น</option>
+          <option>ม.1</option><option>ม.2</option><option>ม.3</option>
+          <option>ม.4</option><option>ม.5</option><option>ม.6</option>
+        </select>
+        <input id="room" maxlength="5" placeholder="ห้อง เช่น 1" required>
+        <button type="submit">เพิ่มนักเรียน</button>
+      </form>
+      <div class="toolbar">
+        <input id="studentSearch" type="search" placeholder="ค้นหารหัส ชื่อ หรือห้อง">
+        <button id="exportButton" type="button">ส่งออก CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>รหัส</th><th>ชื่อ–นามสกุล</th><th>ชั้น/ห้อง</th><th>คำสั่ง</th></tr>
+          </thead>
+          <tbody id="studentTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="attendanceView" class="panel view">
+      <h2>บันทึกเวลาเรียน</h2>
+      <form id="attendanceForm" class="form-grid">
+        <select id="attendanceStudent" required></select>
+        <input id="attendanceDate" type="date" required>
+        <select id="attendanceStatus" required>
+          <option value="มาเรียน">มาเรียน</option>
+          <option value="มาสาย">มาสาย</option>
+          <option value="ขาดเรียน">ขาดเรียน</option>
+        </select>
+        <button type="submit">บันทึก</button>
+      </form>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>วันที่</th><th>นักเรียน</th><th>สถานะ</th><th>คำสั่ง</th></tr>
+          </thead>
+          <tbody id="attendanceTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="gradesView" class="panel view">
+      <h2>บันทึกผลการเรียน</h2>
+      <form id="gradeForm" class="form-grid">
+        <select id="gradeStudent" required></select>
+        <input id="subject" maxlength="80" placeholder="รายวิชา" required>
+        <input id="score" type="number" min="0" max="100" step="0.01" placeholder="คะแนน 0–100" required>
+        <button type="submit">บันทึกคะแนน</button>
+      </form>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>นักเรียน</th><th>วิชา</th><th>คะแนน</th><th>เกรด</th><th>คำสั่ง</th></tr>
+          </thead>
+          <tbody id="gradeTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    "use strict";
+
+    const KEYS = {
+      STUDENTS: "orange-school-students-v1",
+      ATTENDANCE: "orange-school-attendance-v1",
+      GRADES: "orange-school-grades-v1"
+    };
+
+    const load = (key, fallback = []) => {
+      try {
+        return JSON.parse(localStorage.getItem(key)) ?? fallback;
+      } catch {
+        return fallback;
+      }
+    };
+
+    const createId = () =>
+      window.crypto?.randomUUID?.() ??
+      `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    const escapeHtml = value =>
+      String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;",
+        '"': "&quot;", "'": "&#039;"
+      })[character]);
+
+    const todayLocal = () => {
+      const date = new Date();
+      const offset = date.getTimezoneOffset() * 60000;
+      return new Date(date.getTime() - offset).toISOString().slice(0, 10);
+    };
+
+    const gradeFromScore = score => {
+      if (score >= 80) return "4";
+      if (score >= 75) return "3.5";
+      if (score >= 70) return "3";
+      if (score >= 65) return "2.5";
+      if (score >= 60) return "2";
+      if (score >= 55) return "1.5";
+      if (score >= 50) return "1";
+      return "0";
+    };
+
+    let students = load(KEYS.STUDENTS);
+    let attendance = load(KEYS.ATTENDANCE);
+    let grades = load(KEYS.GRADES);
+
+    const persist = () => {
+      localStorage.setItem(KEYS.STUDENTS, JSON.stringify(students));
+      localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify(attendance));
+      localStorage.setItem(KEYS.GRADES, JSON.stringify(grades));
+    };
+
+    const studentName = studentId => {
+      const student = students.find(item => item.id === studentId);
+      return student ? `${student.firstName} ${student.lastName}` : "ไม่พบข้อมูล";
+    };
+
+    function notify(text, type = "ok") {
+      systemMessage.textContent = text;
+      systemMessage.className = `message show ${type}`;
+      setTimeout(() => systemMessage.classList.remove("show"), 3000);
+    }
+
+    function renderStudentOptions() {
+      const options = students.length
+        ? students.map(student => `
+            <option value="${student.id}">
+              ${escapeHtml(student.code)} — ${escapeHtml(student.firstName)}
+              ${escapeHtml(student.lastName)}
+            </option>
+          `).join("")
+        : '<option value="">ยังไม่มีข้อมูลนักเรียน</option>';
+
+      attendanceStudent.innerHTML = options;
+      gradeStudent.innerHTML = options;
+    }
+
+    function renderStudents() {
+      const query = studentSearch.value.trim().toLocaleLowerCase("th");
+
+      const result = students.filter(student => {
+        const searchable =
+          `${student.code} ${student.firstName} ${student.lastName} ` +
+          `${student.level}/${student.room}`;
+        return searchable.toLocaleLowerCase("th").includes(query);
+      });
+
+      studentTable.innerHTML = result.length
+        ? result.map(student => `
+          <tr>
+            <td>${escapeHtml(student.code)}</td>
+            <td>${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}</td>
+            <td>${escapeHtml(student.level)}/${escapeHtml(student.room)}</td>
+            <td>
+              <button class="danger" type="button"
+                onclick="deleteStudent('${student.id}')">ลบ</button>
+            </td>
+          </tr>
+        `).join("")
+        : '<tr><td colspan="4" class="empty">ไม่พบข้อมูลนักเรียน</td></tr>';
+    }
+
+    function renderAttendance() {
+      attendanceTable.innerHTML = attendance.length
+        ? [...attendance].sort((a, b) => b.date.localeCompare(a.date)).map(item => {
+            const className =
+              item.status === "มาเรียน" ? "present" :
+              item.status === "มาสาย" ? "late" : "absent";
+
+            return `
+              <tr>
+                <td>${escapeHtml(item.date)}</td>
+                <td>${escapeHtml(studentName(item.studentId))}</td>
+                <td><span class="status ${className}">${escapeHtml(item.status)}</span></td>
+                <td>
+                  <button class="danger" type="button"
+                    onclick="deleteAttendance('${item.id}')">ลบ</button>
+                </td>
+              </tr>`;
+          }).join("")
+        : '<tr><td colspan="4" class="empty">ยังไม่มีข้อมูลการเข้าเรียน</td></tr>';
+    }
+
+    function renderGrades() {
+      gradeTable.innerHTML = grades.length
+        ? grades.map(item => `
+          <tr>
+            <td>${escapeHtml(studentName(item.studentId))}</td>
+            <td>${escapeHtml(item.subject)}</td>
+            <td>${Number(item.score).toFixed(2)}</td>
+            <td>${gradeFromScore(item.score)}</td>
+            <td>
+              <button class="danger" type="button"
+                onclick="deleteGrade('${item.id}')">ลบ</button>
+            </td>
+          </tr>
+        `).join("")
+        : '<tr><td colspan="5" class="empty">ยังไม่มีข้อมูลผลการเรียน</td></tr>';
+    }
+
+    function renderSummary() {
+      studentCount.textContent = students.length;
+      classCount.textContent =
+        new Set(students.map(student => `${student.level}/${student.room}`)).size;
+
+      presentCount.textContent = attendance.filter(item =>
+        item.date === todayLocal() && item.status === "มาเรียน"
+      ).length;
+
+      const average = grades.length
+        ? grades.reduce((sum, item) => sum + Number(item.score), 0) / grades.length
+        : 0;
+
+      averageGrade.textContent = gradeFromScore(average);
+    }
+
+    function renderAll() {
+      renderStudentOptions();
+      renderStudents();
+      renderAttendance();
+      renderGrades();
+      renderSummary();
+      persist();
+    }
+
+    studentForm.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const code = studentCode.value.trim();
+      const first = firstName.value.trim();
+      const last = lastName.value.trim();
+      const level = studentLevel.value;
+      const roomValue = room.value.trim();
+
+      if (!/^[A-Za-z0-9ก-๙-]{2,12}$/.test(code) ||
+          first.length < 2 || last.length < 2 ||
+          !level || !/^[0-9]{1,2}$/.test(roomValue)) {
+        notify("กรุณาตรวจสอบรหัส ชื่อ นามสกุล ระดับชั้น และห้อง", "error");
+        return;
+      }
+
+      if (students.some(student =>
+        student.code.toLocaleLowerCase() === code.toLocaleLowerCase()
+      )) {
+        notify("รหัสนักเรียนนี้มีอยู่ในระบบแล้ว", "error");
+        return;
+      }
+
+      students.push({
+        id: createId(),
+        code,
+        firstName: first,
+        lastName: last,
+        level,
+        room: roomValue,
+        createdAt: new Date().toISOString()
+      });
+
+      studentForm.reset();
+      renderAll();
+      notify("เพิ่มข้อมูลนักเรียนเรียบร้อยแล้ว");
+    });
+
+    attendanceForm.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const studentId = attendanceStudent.value;
+      const date = attendanceDate.value;
+      const status = attendanceStatus.value;
+
+      if (!students.some(student => student.id === studentId) || !date) {
+        notify("กรุณาเลือกนักเรียนและวันที่", "error");
+        return;
+      }
+
+      const existing = attendance.find(item =>
+        item.studentId === studentId && item.date === date
+      );
+
+      if (existing) {
+        existing.status = status;
+      } else {
+        attendance.push({
+          id: createId(),
+          studentId,
+          date,
+          status
+        });
+      }
+
+      renderAll();
+      notify(existing
+        ? "ปรับปรุงสถานะการเข้าเรียนแล้ว"
+        : "บันทึกการเข้าเรียนเรียบร้อยแล้ว");
+    });
+
+    gradeForm.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const studentId = gradeStudent.value;
+      const subjectValue = subject.value.trim();
+      const scoreValue = Number(score.value);
+
+      if (!students.some(student => student.id === studentId) ||
+          subjectValue.length < 2 ||
+          !Number.isFinite(scoreValue) ||
+          scoreValue < 0 || scoreValue > 100) {
+        notify("กรุณาตรวจสอบนักเรียน รายวิชา และคะแนน 0–100", "error");
+        return;
+      }
+
+      const existing = grades.find(item =>
+        item.studentId === studentId &&
+        item.subject.toLocaleLowerCase("th") ===
+          subjectValue.toLocaleLowerCase("th")
+      );
+
+      if (existing) {
+        existing.score = scoreValue;
+      } else {
+        grades.push({
+          id: createId(),
+          studentId,
+          subject: subjectValue,
+          score: scoreValue
+        });
+      }
+
+      gradeForm.reset();
+      renderAll();
+      notify(existing ? "ปรับปรุงคะแนนแล้ว" : "บันทึกคะแนนเรียบร้อยแล้ว");
+    });
+
+    function deleteStudent(id) {
+      if (!confirm("การลบนักเรียนจะลบเวลาเรียนและคะแนนที่เกี่ยวข้องด้วย ยืนยันหรือไม่?")) {
+        return;
+      }
+
+      students = students.filter(student => student.id !== id);
+      attendance = attendance.filter(item => item.studentId !== id);
+      grades = grades.filter(item => item.studentId !== id);
+      renderAll();
+      notify("ลบข้อมูลนักเรียนเรียบร้อยแล้ว");
+    }
+
+    function deleteAttendance(id) {
+      if (!confirm("ยืนยันการลบข้อมูลการเข้าเรียน?")) return;
+      attendance = attendance.filter(item => item.id !== id);
+      renderAll();
+    }
+
+    function deleteGrade(id) {
+      if (!confirm("ยืนยันการลบคะแนน?")) return;
+      grades = grades.filter(item => item.id !== id);
+      renderAll();
+    }
+
+    function csvCell(value) {
+      return `"${String(value ?? "").replaceAll('"', '""')}"`;
+    }
+
+    exportButton.addEventListener("click", () => {
+      if (!students.length) {
+        notify("ยังไม่มีข้อมูลสำหรับส่งออก", "error");
+        return;
+      }
+
+      const rows = [
+        ["รหัสนักเรียน", "ชื่อ", "นามสกุล", "ระดับชั้น", "ห้อง"],
+        ...students.map(student => [
+          student.code,
+          student.firstName,
+          student.lastName,
+          student.level,
+          student.room
+        ])
+      ];
+
+      const csv = "\uFEFF" + rows
+        .map(row => row.map(csvCell).join(","))
+        .join("\r\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `students-${todayLocal()}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+
+    document.querySelectorAll(".tab").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(tab =>
+          tab.classList.remove("active")
+        );
+        document.querySelectorAll(".view").forEach(view =>
+          view.classList.remove("active")
+        );
+
+        button.classList.add("active");
+        document.getElementById(button.dataset.view).classList.add("active");
+      });
+    });
+
+    studentSearch.addEventListener("input", renderStudents);
+    attendanceDate.value = todayLocal();
+
+    // Unit smoke tests
+    console.assert(gradeFromScore(80) === "4", "Grade 4 test failed");
+    console.assert(gradeFromScore(49) === "0", "Grade 0 test failed");
+    console.assert(escapeHtml("<b>") === "&lt;b&gt;", "HTML escape test failed");
+    console.assert(/^\d{4}-\d{2}-\d{2}$/.test(todayLocal()), "Date test failed");
+
+    renderAll();
+  </script>
+</body>
+</html>
